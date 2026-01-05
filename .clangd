@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [-m64, -ffreestanding, -Wall, -Wextra, -Isrc, -nostdlib, -I "libc/include"]

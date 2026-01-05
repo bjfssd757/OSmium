@@ -1,0 +1,32 @@
+{
+    "cSpell.words": [
+        "acpi",
+        "BOOLIB",
+        "Cascadia",
+        "ctzll",
+        "ehdr",
+        "ELFCLASS",
+        "fbtype",
+        "hhdm",
+        "iopb",
+        "irqrestore",
+        "irqsave",
+        "kformat",
+        "kmain",
+        "kmalloc",
+        "kprint",
+        "kstack",
+        "limine",
+        "memsz",
+        "pdpt",
+        "phoff",
+        "pushfq",
+        "rdrand",
+        "RFLAGS",
+        "rsdp",
+        "setc",
+        "ssfn",
+        "strchrnul"
+    ],
+    "terminal.integrated.defaultProfile.windows": "Debian (WSL)"
+}

@@ -1,0 +1,6 @@
+build/
+./exfat
+ram.dump
+qemu.log
+kernel.iso
+disk.img

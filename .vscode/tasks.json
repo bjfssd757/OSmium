@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "make",
+            "type": "shell",
+            "command": "make",
+            "options": {
+                "shell": {
+                    "executable": "wsl.exe",
+                    "args": [
+                        "-d", "Debian",
+                        "-e", "bash", "-l", "-c"
+                    ]
+                }
+            },
+            "group": "build"
+        },
+        {
+            "label": "make iso",
+            "type": "shell",
+            "command": "grub-mkrescue -o kernel.iso iso",
+            "group": "build"
+        }
+    ]
+}
