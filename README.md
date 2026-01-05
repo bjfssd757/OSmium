@@ -51,3 +51,41 @@
 | **src/idt**              | Interrupt Descriptor Table - связывает прерывание и обработчик                                                                      |
 | **src/isr**              | Хелпер для прерываний                                                                                                               |
 | **src/kernel.c**         | Главный файл ядра. Функция kmain() - точка входа в реальную логику ядра (после kernel.asm. Asm вызывает как раз kmain)              |
+
+
+## Инструкция по сборке:
+###Клонируем репозиторий:
+
+```git clone https://github.com/bjfssd757/OSmium```
+
+###Заходим в корень проекта
+
+```cd OSmium```
+
+###Билдим
+
+```make```
+
+
+
+## Вариант сборки:
+`make run` - запуск полученного образа ядра в qemu с параметрами: `-serial stdio -m 2G`
+
+`make fs` - запуск qemu с флагами: `-serial stdio -m 2G -drive file=disk.img,format=raw`
+
+`make kvm` - запуск qemu с флагами: `-serial stdio -m 2G -enable-kvm` - аппаратное ускорение
+
+`make gdb`- запуск qemu с флагами: `-s -S -serial stdio -m 2G -d guest_errors,int,in_asm,exec -D qemu.log -no-reboot` - ВАЖНО `-D qemu.log` означает запись работы в файл qemu.log. Это очень много строчек, но файл в целом не особо большой (я не получал больше нескольких мб). Данные флаги запускают qemu в режиме ожидания отладчика gdb, не перезапускается (на случай тройной ошибки)
+
+`make debug` - запуск qemu с флагами: `-serial stdio -m 2G -d guest_errors,int,in_asm,exec -D qemu.log -no-reboot -action panic=pause` - тут уже нет ожидания отладчика, но есть логирование, выключен перезапуск (опять же, на случай тройной ошибки) и в случае паники qemu останавливается (pause)
+
+`make log` - запуск qemu с флагами: -`serial stdio -m 2G -d in_asm,exec,cpu,guest_errors,int,mmu -D qemu.log` - ВАЖНО: вот тут файл логов может быть довольно тяжёлым. Тут прям жёстко всё логируется
+
+`make clean` - очистить сборку
+
+Как получить дамп памяти?
+Во время работы qemu жмём `ctrl + alt + 2`, затем пишем команду: `dump-guest-memory -p ram.dump`. Операция может идти довольно долго. В среднрем дамп у меня весил от 2 гб. Флаг `-p` включает в дамп информацию о таблицах страниц (paging), что полезно может быть)
+После дампа можно продолжить выполнять всё в qemu ИЛИ просмотреть дамп отладчиком (я юзаю gdb). В gdb открыть дамп легко:
+`gdb build/kernel.elf`, затем в самом gdb команда target core ram.dump
+
+Дамп можно сжать, добавив флаг `-z` для zlib, `-l` для lzo ИЛИ `-s` для snappy
