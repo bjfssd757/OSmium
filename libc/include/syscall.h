@@ -1,91 +1,88 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
-// Соглашение о вызовах для x86-64:
-// rax: номер syscall
-// rdi, rsi, rdx, r10, r8, r9: аргументы 1-6
-
-// --- Обертки для системных вызовов ---
-
-// Замечание: GCC inline-ассемблер - мощный, но сложный.
-// "memory" в clobber-листе говорит компилятору, что ассемблерный код
-// может читать или писать в произвольную память, что заставляет его
-// сбросить кешированные значения из регистров в память перед вызовом
-// и перезагрузить их после.
-
-#include "sys/types.h"
 #include <stdint.h>
 #include <stddef.h>
+#include "sys/types.h"
 
-// Системное
-#define SYSCALL_GET_TIME 5
-#define SYSCALL_GET_TIME_UP 7
+// State
+#define SYSCALL_GET_TIME            5
+#define SYSCALL_GET_TIME_UP         7
 
-// Память
-#define SYSCALL_MALLOC 10
-#define SYSCALL_REALLOC 11
-#define SYSCALL_FREE 12
-#define SYSCALL_KMALLOC_STATS 13
+// Memory management
+#define SYSCALL_MALLOC              10
+#define SYSCALL_REALLOC             11
+#define SYSCALL_FREE                12
+#define SYSCALL_KMALLOC_STATS       13
 
-// Устройства ввода
-#define SYSCALL_GETCHAR 30
+// IO devices
+#define SYSCALL_GETCHAR             30
 
-// Управление питанием
-#define SYSCALL_POWER_OFF 100
-#define SYSCALL_REBOOT 101
+// Power management
+#define SYSCALL_POWER_OFF           100
+#define SYSCALL_REBOOT              101
 
-// Управление задачами
-#define SYSCALL_TASK_CREATE 200
-#define SYSCALL_TASK_LIST 201
-#define SYSCALL_TASK_STOP 202
-#define SYSCALL_REAP_ZOMBIES 203
-#define SYSCALL_TASK_EXIT 204
-#define SYSCALL_TASK_IS_ALIVE 205
-#define SYSCALL_TASK_GET_ERRNO_LOC 206
-#define SYSCALL_GETPID 207
+// Process management (process creation is for system/privileged code; userland can only create threads)
+#define SYSCALL_PROCESS_CREATE      200
+#define SYSCALL_PROCESS_LIST        201
+#define SYSCALL_PROCESS_STOP        202
+#define SYSCALL_PROCESS_EXIT        203
+#define SYSCALL_PROCESS_IS_ALIVE    204
+#define SYSCALL_GETPID              205
 
-// Отладка/Исключения
-#define THROW_AN_EXCEPTION 300
+// Thread management
+#define SYSCALL_THREAD_CREATE       250
+#define SYSCALL_THREAD_LIST         251
+#define SYSCALL_THREAD_STOP         252
+#define SYSCALL_REAP_ZOMBIES        253
+#define SYSCALL_THREAD_EXIT         254
+#define SYSCALL_THREAD_IS_ALIVE     255
+#define SYSCALL_THREAD_GET_ERRNO_LOC 256
+#define SYSCALL_GETTID              257
 
-// Графика (примитивы)
-#define SYSCALL_GFX_DRAW_POINT 400
-#define SYSCALL_GFX_DRAW_LINE 401
-#define SYSCALL_GFX_DRAW_CIRCLE 402
-#define SYSCALL_GFX_FILL_CIRCLE 403
-#define SYSCALL_GFX_DRAW_RECT 404
-#define SYSCALL_GFX_FILL_RECT 405
-#define SYSCALL_GFX_CLEAR 406
+// Exception/debug
+#define THROW_AN_EXCEPTION          300
 
-// НОВЫЕ графические сисколы
-#define SYSCALL_GFX_UPDATE_SCREEN 407 // Обновить экран из бэк-буфера
-#define SYSCALL_GFX_DRAW_STRING 408   // Нарисовать строку
-#define SYSCALL_GFX_GET_TEXT_BOUNDS 409 // Получить размеры текста
+// Graphics (framebuffer primitives)
+#define SYSCALL_GFX_DRAW_POINT      400
+#define SYSCALL_GFX_DRAW_LINE       401
+#define SYSCALL_GFX_DRAW_CIRCLE     402
+#define SYSCALL_GFX_FILL_CIRCLE     403
+#define SYSCALL_GFX_DRAW_RECT       404
+#define SYSCALL_GFX_FILL_RECT       405
+#define SYSCALL_GFX_CLEAR           406
+#define SYSCALL_GFX_UPDATE_SCREEN   407
+#define SYSCALL_GFX_DRAW_STRING     408
+#define SYSCALL_GFX_GET_TEXT_BOUNDS 409
 
-// Файловая система
-#define SYSCALL_CHDIR 500
-#define SYSCALL_GETCWD 501
-#define SYSCALL_GET_CWD_IDX 502
-#define SYSCALL_FS_MKDIR 600
-#define SYSCALL_FS_RMDIR 601
-#define SYSCALL_FS_CREATE_FILE 602
-#define SYSCALL_FS_REMOVE_ENTRY 603
-#define SYSCALL_FS_FIND_IN_DIR 604
-#define SYSCALL_FS_GET_ALL_IN_DIR 605
-#define SYSCALL_FS_READ 606
-#define SYSCALL_FS_WRITE 607
+// Event system (read event queue from kernel)
+#define SYSCALL_GET_EVENTS          900
+
+// File system
+#define SYSCALL_CHDIR               500
+#define SYSCALL_GETCWD              501
+#define SYSCALL_GET_CWD_IDX         502
+#define SYSCALL_FS_MKDIR            600
+#define SYSCALL_FS_RMDIR            601
+#define SYSCALL_FS_CREATE_FILE      602
+#define SYSCALL_FS_REMOVE_ENTRY     603
+#define SYSCALL_FS_FIND_IN_DIR      604
+#define SYSCALL_FS_GET_ALL_IN_DIR   605
+#define SYSCALL_FS_READ             606
+#define SYSCALL_FS_WRITE            607
 #define SYSCALL_FS_WRITE_FILE_IN_DIR 608
 #define SYSCALL_FS_READ_FILE_IN_DIR 609
-#define SYSCALL_FS_GET_PARENT_IDX 610
-#define SYSCALL_FS_BUILD_PATH 611
+#define SYSCALL_FS_GET_PARENT_IDX   610
+#define SYSCALL_FS_BUILD_PATH       611
 
-#define SYSCALL_DISK_READ_SECTORS 700
-#define SYSCALL_DISK_WRITE_SECTORS 701
-#define SYSCALL_DISK_GET_SIZE 702
+#define SYSCALL_DISK_READ_SECTORS   700
+#define SYSCALL_DISK_WRITE_SECTORS  701
+#define SYSCALL_DISK_GET_SIZE       702
 
 // IPC
-#define SYSCALL_IPC_SEND    800
-#define SYSCALL_IPC_RECEIVE 801
-#define SYSCALL_IPC_CALL    802
+#define SYSCALL_IPC_SEND            800
+#define SYSCALL_IPC_RECEIVE         801
+#define SYSCALL_IPC_CALL            802
 
 typedef struct {
     int sender_pid;
@@ -98,19 +95,22 @@ typedef struct {
 } ipc_msg_t;
 
 // IO ports
-#define SYSCALL_IO_PORT_GRANT  810
-#define SYSCALL_IO_PORT_REVOKE 811
+#define SYSCALL_IO_PORT_GRANT       810
+#define SYSCALL_IO_PORT_REVOKE      811
 
 // VFS
-#define SYSCALL_VFS_REGISTER 820
-#define SYSCALL_VFS_OPEN     821
-#define SYSCALL_VFS_READ     822
-#define SYSCALL_VFS_WRITE    823
-#define SYSCALL_VFS_CLOSE    824
-#define SYSCALL_VFS_STAT     825
-#define SYSCALL_VFS_MKDIR    826
-#define SYSCALL_VFS_RMDIR    827
-#define SYSCALL_VFS_UNLINK   828
+#define SYSCALL_VFS_REGISTER        820
+#define SYSCALL_VFS_OPEN            821
+#define SYSCALL_VFS_READ            822
+#define SYSCALL_VFS_WRITE           823
+#define SYSCALL_VFS_CLOSE           824
+#define SYSCALL_VFS_STAT            825
+#define SYSCALL_VFS_MKDIR           826
+#define SYSCALL_VFS_RMDIR           827
+#define SYSCALL_VFS_UNLINK          828
+#define SYSCALL_VFS_FIND            829
+#define SYSCALL_VFS_SEEK            830
+#define SYSCALL_VFS_FILE_SIZE       831
 
 typedef struct {
     uint64_t size;
@@ -127,478 +127,179 @@ typedef struct {
 #define VFS_O_TRUNC     0x0200
 #define VFS_O_APPEND    0x0400
 
-static inline int syscall_io_port_grant(uint16_t port)
-{
-    register uint64_t rdi asm("rdi") = (uint64_t)port;
-    register uint64_t rax asm("rax") = (uint64_t)SYSCALL_IO_PORT_GRANT;
-    int result;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
+typedef enum {
+    EVENT_MOUSE,
+    EVENT_KEY,
+    EVENT_WINDOW
+} event_type_t;
 
-static inline int syscall_io_port_revoke(uint16_t port)
-{
-    register uint64_t rdi asm("rdi") = (uint64_t)port;
-    register uint64_t rax asm("rax") = (uint64_t)SYSCALL_IO_PORT_REVOKE;
-    int result;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
+typedef struct {
+    event_type_t type;
+    union {
+        struct { int x, y, button, state; } mouse;
+        struct { int key, pressed; } key;
+    } data;
+    int target_wid;
+    int pid;
+    int uid;
+} event_t;
 
-static inline int* syscall_task_get_errno_loc(void) {
-    int* result;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(SYSCALL_TASK_GET_ERRNO_LOC)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
+#define _SYSCALL_RET(type, res) \
+    if (!__builtin_types_compatible_p(type, void)) return (type)res;
 
-static inline int syscall_fs_find(const char* path, void* entry_buf) {
-    int res;
-    // Предполагаем, что ядро ищет от корня, если `dir_path` и `dir_idx` NULL
-    register uint64_t r10 asm("r10") = (uint64_t)entry_buf;
-    asm volatile(
-        "syscall"
-        : "=a"(res)
-        : "a"((uint64_t)SYSCALL_FS_FIND_IN_DIR), 
-        "D"((uint64_t)path), 
-        "S"((uint64_t)NULL), 
-        "d"(-1), 
-        "r"(r10)
-        : "rcx", "r11", "memory"
-    );
-    return res;
-}
+#define _DO_SYSCALL(name, type, ...) do {                                 \
+    register uint64_t rax_ __asm__("rax") = SYSCALL_##name;               \
+    uint64_t res_;                                                         \
+    __asm__ volatile("syscall"                                            \
+                     : "=a"(res_)                                          \
+                     : "a"(rax_) , ##__VA_ARGS__                           \
+                     : "rcx", "r11", "memory");                            \
+    _SYSCALL_RET(type, res_);                                              \
+} while (0)
 
-static inline size_t syscall_fs_read(uint16_t cluster_idx, void* buf, size_t count) {
-    size_t bytes_read;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(bytes_read)
-        : "a"((uint64_t)SYSCALL_FS_READ), "D"((uint64_t)cluster_idx), "S"((uint64_t)buf), "d"((uint64_t)count)
-        : "rcx", "r11", "memory"
-    );
-    return bytes_read;
-}
+#define _SC0_A(type, name, alias) \
+    static inline type name(void) { _DO_SYSCALL(name, type); } \
+    static inline type PP_CAT(syscall_, alias)(void) { return name(); }
 
-static inline size_t syscall_fs_write(uint16_t cluster_idx, const void* buf, size_t count) {
-    size_t bytes_written;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(bytes_written)
-        : "a"((uint64_t)SYSCALL_FS_WRITE), "D"((uint64_t)cluster_idx), "S"((uint64_t)buf), "d"((uint64_t)count)
-        : "rcx", "r11", "memory"
-    );
-    return bytes_written;
-}
+#define _SC1_A(type, name, alias, t1, a1) \
+    static inline type name(t1 a1) { \
+        register uint64_t rdi_ __asm__("rdi") = (uint64_t)a1; \
+        _DO_SYSCALL(name, type, "D"(rdi_)); \
+    } \
+    static inline type PP_CAT(syscall_, alias)(t1 a1) { return name(a1); }
 
-static inline void syscall_gfx_draw_string(int x, int y, int size, uint32_t color, const char* s) {
-    register uint64_t r10 asm("r10") = (uint64_t)color;
-    register uint64_t r8 asm("r8") = (uint64_t)s;
-    __asm__ volatile(
-        "syscall"
-        :
-        : "a"((uint64_t)SYSCALL_GFX_DRAW_STRING), "D"((uint64_t)x), "S"((uint64_t)y), "d"((uint64_t)size), "r"(r10), "r"(r8)
-        : "rcx", "r11", "memory"
-    );
-}
+#define _SC2_A(type, name, alias, t1, a1, t2, a2) \
+    static inline type name(t1 a1, t2 a2) { \
+        register uint64_t rdi_ __asm__("rdi") = (uint64_t)a1; \
+        register uint64_t rsi_ __asm__("rsi") = (uint64_t)a2; \
+        _DO_SYSCALL(name, type, "D"(rdi_), "S"(rsi_)); \
+    } \
+    static inline type PP_CAT(syscall_, alias)(t1 a1, t2 a2) { return name(a1, a2); }
 
-static inline void syscall_gfx_update_screen() {
-    __asm__ volatile(
-        "syscall"
-        :
-        : "a"((uint64_t)SYSCALL_GFX_UPDATE_SCREEN)
-        : "rcx", "r11", "memory"
-    );
-}
+#define _SC3_A(type, name, alias, t1, a1, t2, a2, t3, a3) \
+    static inline type name(t1 a1, t2 a2, t3 a3) { \
+        register uint64_t rdi_ __asm__("rdi") = (uint64_t)a1; \
+        register uint64_t rsi_ __asm__("rsi") = (uint64_t)a2; \
+        register uint64_t rdx_ __asm__("rdx") = (uint64_t)a3; \
+        _DO_SYSCALL(name, type, "D"(rdi_), "S"(rsi_), "d"(rdx_)); \
+    } \
+    static inline type PP_CAT(syscall_, alias)(t1 a1, t2 a2, t3 a3) { return name(a1, a2, a3); }
 
-static inline char *syscall_get_time(char *buf)
-{
-    char *result;
-    __asm__ volatile(
-        "movq %1, %%rax\n"
-        "movq %2, %%rdi\n"
-        "syscall\n"
-        "movq %%rax, %0\n"
-        : "=r"(result)
-        : "i"((uint64_t)SYSCALL_GET_TIME), "r"((uint64_t)buf)
-        : "rax", "rdi", "memory");
-    return result;
-}
+#define _SC4_A(type, name, alias, t1, a1, t2, a2, t3, a3, t4, a4) \
+    static inline type name(t1 a1, t2 a2, t3 a3, t4 a4) { \
+        register uint64_t rdi_ __asm__("rdi") = (uint64_t)a1; \
+        register uint64_t rsi_ __asm__("rsi") = (uint64_t)a2; \
+        register uint64_t rdx_ __asm__("rdx") = (uint64_t)a3; \
+        register uint64_t r10_ __asm__("r10") = (uint64_t)a4; \
+        _DO_SYSCALL(name, type, "D"(rdi_), "S"(rsi_), "d"(rdx_), "r"(r10_)); \
+    } \
+    static inline type PP_CAT(syscall_, alias)(t1 a1, t2 a2, t3 a3, t4 a4) { return name(a1, a2, a3, a4); }
 
-static inline uint32_t syscall_get_time_up()
-{
-    uint32_t result;
-    register uint64_t rax asm("rax") = (uint64_t)SYSCALL_GET_TIME_UP;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "0"(rax)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
+#define _SC5_A(type, name, alias, t1, a1, t2, a2, t3, a3, t4, a4, t5, a5) \
+    static inline type name(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5) { \
+        register uint64_t rdi_ __asm__("rdi") = (uint64_t)a1; \
+        register uint64_t rsi_ __asm__("rsi") = (uint64_t)a2; \
+        register uint64_t rdx_ __asm__("rdx") = (uint64_t)a3; \
+        register uint64_t r10_ __asm__("r10") = (uint64_t)a4; \
+        register uint64_t r8_  __asm__("r8")  = (uint64_t)a5; \
+        _DO_SYSCALL(name, type, "D"(rdi_), "S"(rsi_), "d"(rdx_), "r"(r10_), "r"(r8_)); \
+    } \
+    static inline type PP_CAT(syscall_, alias)(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5) { return name(a1, a2, a3, a4, a5); }
 
-static inline void *syscall_malloc(size_t size)
-{
-    void *result;
-    __asm__ volatile(
-        "movq %1, %%rax\n"
-        "movq %2, %%rdi\n"
-        "syscall\n"
-        "movq %%rax, %0\n"
-        : "=r"(result)
-        : "i"((uint64_t)SYSCALL_MALLOC), "r"((uint64_t)size)
-        : "rax", "rdi", "memory");
-    return result;
-}
+#define _SC6_A(type, name, alias, t1, a1, t2, a2, t3, a3, t4, a4, t5, a5, t6, a6) \
+    static inline type name(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5, t6 a6) { \
+        register uint64_t rdi_ __asm__("rdi") = (uint64_t)a1; \
+        register uint64_t rsi_ __asm__("rsi") = (uint64_t)a2; \
+        register uint64_t rdx_ __asm__("rdx") = (uint64_t)a3; \
+        register uint64_t r10_ __asm__("r10") = (uint64_t)a4; \
+        register uint64_t r8_  __asm__("r8")  = (uint64_t)a5; \
+        register uint64_t r9_  __asm__("r9")  = (uint64_t)a6; \
+        _DO_SYSCALL(name, type, "D"(rdi_), "S"(rsi_), "d"(rdx_), "r"(r10_), "r"(r8_), "r"(r9_)); \
+    } \
+    static inline type PP_CAT(syscall_, alias)(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5, t6 a6) { return name(a1, a2, a3, a4, a5, a6); }
 
-static inline void syscall_free(void *ptr)
-{
-    __asm__ volatile(
-        "movq %0, %%rax\n"
-        "movq %1, %%rdi\n"
-        "syscall\n"
-        :
-        : "i"((uint64_t)SYSCALL_FREE), "r"((uint64_t)ptr)
-        : "rax", "rdi", "memory");
-}
+#define PP_CAT(a,b) PP_CAT_I(a,b)
+#define PP_CAT_I(a,b) a##b
 
-static inline void *syscall_realloc(void *ptr, size_t size)
-{
-    void *result;
-    __asm__ volatile(
-        "movq %1, %%rax\n"
-        "movq %2, %%rdi\n"
-        "movq %3, %%rsi\n"
-        "syscall\n"
-        "movq %%rax, %0\n"
-        : "=r"(result)
-        : "i"((uint64_t)SYSCALL_REALLOC), "r"((uint64_t)ptr), "r"((uint64_t)size)
-        : "rax", "rdi", "rsi", "memory");
-    return result;
-}
+#define PP_ARG_N(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,N,...) N
+#define PP_RSEQ_N() 16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0
+#define PP_NARG_(...) PP_ARG_N(__VA_ARGS__)
+#define PP_NARG(...) PP_NARG_(__VA_ARGS__, PP_RSEQ_N())
 
-static inline void syscall_kmalloc_stats(void *stats)
-{
-    __asm__ volatile(
-        "movq %0, %%rax\n"
-        "movq %1, %%rdi\n"
-        "syscall\n"
-        :
-        : "i"((uint64_t)SYSCALL_KMALLOC_STATS), "r"((uint64_t)stats)
-        : "rax", "rdi", "memory");
-}
+#define SELECT_SC_BY_COUNT_3  _SC0_A
+#define SELECT_SC_BY_COUNT_5  _SC1_A
+#define SELECT_SC_BY_COUNT_7  _SC2_A
+#define SELECT_SC_BY_COUNT_9  _SC3_A
+#define SELECT_SC_BY_COUNT_11 _SC4_A
+#define SELECT_SC_BY_COUNT_13 _SC5_A
+#define SELECT_SC_BY_COUNT_15 _SC6_A
 
-static inline int syscall_getchar(void)
-{
-    int result;
-    register uint64_t syscall_num asm("rax") = (uint64_t)SYSCALL_GETCHAR;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "0"(syscall_num)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
+#define SELECT_SC_BY_COUNT(N) PP_CAT(SELECT_SC_BY_COUNT_, N)
 
-static inline void syscall_power_off(void)
-{
-    __asm__ volatile(
-        "movq %0, %%rax\n"
-        "syscall\n"
-        :
-        : "i"((uint64_t)SYSCALL_POWER_OFF)
-        : "rax", "memory");
-}
+#define syscall(...) SELECT_SC_BY_COUNT(PP_NARG(__VA_ARGS__))(__VA_ARGS__)
 
-static inline void syscall_reboot(void)
-{
-    __asm__ volatile(
-        "movq %0, %%rax\n"
-        "syscall\n"
-        :
-        : "i"((uint64_t)SYSCALL_REBOOT)
-        : "rax", "memory");
-}
 
-static inline void syscall_task_create(void (*entry)(void), size_t stack_size)
-{
-    __asm__ volatile(
-        "movq %0, %%rax\n"
-        "movq %1, %%rdi\n"
-        "movq %2, %%rsi\n"
-        "syscall\n"
-        :
-        : "i"((uint64_t)SYSCALL_TASK_CREATE), "r"((uint64_t)entry), "r"((uint64_t)stack_size)
-        : "rax", "rdi", "rsi", "memory");
-}
+typedef void (*thread_entry_t)(void*);
 
-static inline int syscall_task_list(void *buf, size_t max)
-{
-    int result;
-    __asm__ volatile(
-        "movq %1, %%rax\n"
-        "movq %2, %%rdi\n"
-        "movq %3, %%rsi\n"
-        "syscall\n"
-        "movq %%rax, %0\n"
-        : "=r"(result)
-        : "i"((uint64_t)SYSCALL_TASK_LIST), "r"((uint64_t)buf), "r"((uint64_t)max)
-        : "rax", "rdi", "rsi", "memory");
-    return result;
-}
+syscall(uint32_t, GET_TIME_UP, get_time_up)
 
-static inline int syscall_task_stop(int pid)
-{
-    int result;
-    __asm__ volatile(
-        "movq %1, %%rax\n"
-        "movq %2, %%rdi\n"
-        "syscall\n"
-        "movq %%rax, %0\n"
-        : "=r"(result)
-        : "i"((uint64_t)SYSCALL_TASK_STOP), "r"((uint64_t)pid)
-        : "rax", "rdi", "memory");
-    return result;
-}
+syscall(void*, MALLOC, malloc, size_t, size)
+syscall(void, FREE, free, void*, ptr)
+syscall(void*, REALLOC, realloc, void*, ptr, size_t, size)
+syscall(void, KMALLOC_STATS, kmalloc_stats, void*, stats)
 
-static inline void syscall_reap_zombies(void)
-{
-    __asm__ volatile(
-        "movq %0, %%rax\n"
-        "syscall\n"
-        :
-        : "i"((uint64_t)SYSCALL_REAP_ZOMBIES)
-        : "rax", "memory");
-}
+syscall(int, GETCHAR, getchar)
+syscall(void, POWER_OFF, power_off)
+syscall(void, REBOOT, reboot)
 
-static inline void syscall_exit(int exit_code)
-{
-    __asm__ volatile(
-        "movq %0, %%rax\n"
-        "movq %1, %%rdi\n"
-        "syscall\n"
-        :
-        : "i"((uint64_t)SYSCALL_TASK_EXIT), "r"((uint64_t)exit_code)
-        : "rax", "rdi", "memory");
-}
+syscall(int, THREAD_CREATE, thread_create, thread_entry_t, entry, size_t, stack_size)
+syscall(int, THREAD_LIST, thread_list, void*, buf, size_t, max)
+syscall(int, THREAD_STOP, thread_stop, int, tid)
+syscall(void, REAP_ZOMBIES, reap_zombies)
+syscall(void, THREAD_EXIT, thread_exit, int, exit_code)
+syscall(int, THREAD_IS_ALIVE, thread_is_alive, int, tid)
+syscall(int, THREAD_GET_ERRNO_LOC, thread_get_errno_loc)
+syscall(int, GETTID, gettid)
 
-static inline int syscall_disk_read_sectors(uint64_t lba, uint32_t num_sectors, void* buffer) {
-    int result;
-    register uint64_t rdi asm("rdi") = lba;
-    register uint64_t rsi asm("rsi") = num_sectors;
-    register uint64_t rdx asm("rdx") = (uint64_t)buffer;
-    register uint64_t rax asm("rax") = SYSCALL_DISK_READ_SECTORS;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi), "S"(rsi), "d"(rdx)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
+syscall(void, PROCESS_EXIT, process_exit, int, exit_code)
 
-static inline int syscall_disk_write_sectors(uint64_t lba, uint32_t num_sectors, const void* buffer) {
-    int result;
-    register uint64_t rdi asm("rdi") = lba;
-    register uint64_t rsi asm("rsi") = num_sectors;
-    register uint64_t rdx asm("rdx") = (uint64_t)buffer;
-    register uint64_t rax asm("rax") = SYSCALL_DISK_WRITE_SECTORS;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi), "S"(rsi), "d"(rdx)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
+syscall(void, GFX_DRAW_POINT, gfx_draw_point, uint32_t, x, uint32_t, y, uint32_t, color)
+syscall(void, GFX_DRAW_LINE, gfx_draw_line, int32_t, x0, int32_t, y0, int32_t, x1, int32_t, y1, uint32_t, color)
+syscall(void, GFX_DRAW_CIRCLE, gfx_draw_circle, int32_t, xc, int32_t, yc, int32_t, radius, uint32_t, color)
+syscall(void, GFX_FILL_CIRCLE, gfx_fill_circle, int32_t, xc, int32_t, yc, int32_t, radius, uint32_t, color)
+syscall(void, GFX_DRAW_RECT, gfx_draw_rect, int32_t, x0, int32_t, y0, int32_t, x1, int32_t, y1, uint32_t, color)
+syscall(void, GFX_FILL_RECT, gfx_fill_rest, int32_t, x0, int32_t, y0, int32_t, x1, int32_t, y1, uint32_t, color)
+syscall(void, GFX_CLEAR, gfx_clear, uint32_t, color)
+syscall(void, GFX_UPDATE_SCREEN, gfx_update_screen)
+syscall(void, GFX_DRAW_STRING, gfx_draw_string, int, x, int, y, int, size, uint32_t, color, const char*, s)
+syscall(void, GFX_GET_TEXT_BOUNDS, gfx_get_text_bounds, int, size, const char*, s, int*, w, int*, h, int*, left)
 
-static inline off_t syscall_disk_get_size(void) {
-    off_t result;
-    register uint64_t rax asm("rax") = SYSCALL_DISK_GET_SIZE;
-     __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
+syscall(ssize_t, GET_EVENTS, get_events, event_t*, buf, size_t, max_count)
 
-static inline int syscall_getpid(void) {
-    int result;
-     __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(SYSCALL_GETPID)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
+syscall(int, IPC_SEND, ipc_send, int, target_pid, ipc_msg_t*, msg)
+syscall(int, IPC_RECEIVE, ipc_receive, int, filter_pid, ipc_msg_t*, msg_buf)
+syscall(int, IPC_CALL, ipc_call, int, target_pid, int, target_tid, ipc_msg_t*, msg, ipc_msg_t*, reply_buf)
 
-// static inline int syscall_disk_read(uint64_t lba, uint32_t count, void* buffer) {
-//     int result;
-//     register uint64_t r10 asm("r10") = (uint64_t)buffer;
-//     __asm__ volatile(
-//         "syscall"
-//         : "=a"(result)
-//         : "a"(SYSCALL_DISK_READ), "D"(lba), "S"((uint64_t)count), "r"(r10)
-//         : "rcx", "r11", "memory"
-//     );
-//     return result;
-// }
+syscall(int, VFS_OPEN, vfs_open, const char*, path, int, flags)
+syscall(ssize_t, VFS_READ, vfs_read, int, fd, void*, buffer, size_t, count)
+syscall(ssize_t, VFS_WRITE, vfs_write, int, fd, const void*, buffer, size_t, count)
+syscall(int, VFS_CLOSE, vfs_close, int, fd)
+syscall(int, VFS_STAT, vfs_stat, const char*, path, vfs_stat_t*, stat_buf)
+syscall(int, VFS_MKDIR, vfs_mkdir, const char*, path, uint32_t, mode)
+syscall(int, VFS_RMDIR, vfs_rmdir, const char*, path)
+syscall(int, VFS_UNLINK, vfs_unlink, const char*, path)
+syscall(int, VFS_FIND, vfs_find, const char*, path)
+syscall(int, VFS_SEEK, vfs_seek, int, fd, long, offset, int, whence)
+syscall(size_t, VFS_FILE_SIZE, vfs_file_size, const char*, path)
 
-// static inline int syscall_disk_write(uint64_t lba, uint32_t count, const void* buffer) {
-//     int result;
-//     register uint64_t r10 asm("r10") = (uint64_t)buffer;
-//     __asm__ volatile(
-//         "syscall"
-//         : "=a"(result)
-//         : "a"(SYSCALL_DISK_WRITE), "D"(lba), "S"((uint64_t)count), "r"(r10)
-//         : "rcx", "r11", "memory"
-//     );
-//     return result;
-// }
+syscall(int, CHDIR, chdir, const char*, path)
+syscall(int, GETCWD, getcwd, char*, buf, size_t, size)
 
-static inline int syscall_ipc_send(int target_pid, ipc_msg_t* msg) {
-    int result;
-    register uint64_t rdi asm("rdi") = (uint64_t)target_pid;
-    register uint64_t rsi asm("rsi") = (uint64_t)msg;
-    register uint64_t rax asm("rax") = SYSCALL_IPC_SEND;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi), "S"(rsi)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
+syscall(int, DISK_READ_SECTORS, disk_read_sectors, uint64_t, lba, uint32_t, num_sectors, void*, buffer)
+syscall(int, DISK_WRITE_SECTORS, disk_write_sectors, uint64_t, lba, uint32_t, num_sectors, const void*, buffer)
+syscall(off_t, DISK_GET_SIZE, disk_get_size)
 
-static inline int syscall_ipc_receive(int filter_pid, ipc_msg_t* msg_buf) {
-    int result;
-    register uint64_t rdi asm("rdi") = (uint64_t)filter_pid;
-    register uint64_t rsi asm("rsi") = (uint64_t)msg_buf;
-    register uint64_t rax asm("rax") = SYSCALL_IPC_RECEIVE;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi), "S"(rsi)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
-
-static inline int syscall_vfs_register(const char* mount_point) {
-    int result;
-    register uint64_t rdi asm("rdi") = (uint64_t)mount_point;
-    register uint64_t rax asm("rax") = SYSCALL_VFS_REGISTER;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
-
-static inline int syscall_vfs_open(const char* path, int flags) {
-    int result;
-    register uint64_t rdi asm("rdi") = (uint64_t)path;
-    register uint64_t rsi asm("rsi") = (uint64_t)flags;
-    register uint64_t rax asm("rax") = SYSCALL_VFS_OPEN;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi), "S"(rsi)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
-
-static inline ssize_t syscall_vfs_read(int fd, void* buffer, size_t count) {
-    ssize_t result;
-    register uint64_t rdi asm("rdi") = (uint64_t)fd;
-    register uint64_t rsi asm("rsi") = (uint64_t)buffer;
-    register uint64_t rdx asm("rdx") = (uint64_t)count;
-    register uint64_t rax asm("rax") = SYSCALL_VFS_READ;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi), "S"(rsi), "d"(rdx)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
-
-static inline ssize_t syscall_vfs_write(int fd, const void* buffer, size_t count) {
-    ssize_t result;
-    register uint64_t rdi asm("rdi") = (uint64_t)fd;
-    register uint64_t rsi asm("rsi") = (uint64_t)buffer;
-    register uint64_t rdx asm("rdx") = (uint64_t)count;
-    register uint64_t rax asm("rax") = SYSCALL_VFS_WRITE;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi), "S"(rsi), "d"(rdx)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
-
-static inline int syscall_vfs_close(int fd) {
-    int result;
-    register uint64_t rdi asm("rdi") = (uint64_t)fd;
-    register uint64_t rax asm("rax") = SYSCALL_VFS_CLOSE;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
-
-static inline int syscall_vfs_stat(const char* path, vfs_stat_t* stat_buf) {
-    int result;
-    register uint64_t rdi asm("rdi") = (uint64_t)path;
-    register uint64_t rsi asm("rsi") = (uint64_t)stat_buf;
-    register uint64_t rax asm("rax") = SYSCALL_VFS_STAT;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi), "S"(rsi)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
-
-static inline int syscall_vfs_mkdir(const char* path, uint32_t mode) {
-    int result;
-    register uint64_t rdi asm("rdi") = (uint64_t)path;
-    register uint64_t rsi asm("rsi") = (uint64_t)mode;
-    register uint64_t rax asm("rax") = SYSCALL_VFS_MKDIR;
-    __asm__ volatile(
-        "syscall"
-        : "=a"(result)
-        : "a"(rax), "D"(rdi), "S"(rsi)
-        : "rcx", "r11", "memory"
-    );
-    return result;
-}
+syscall(int, IO_PORT_GRANT, io_port_grant, uint16_t, port)
+syscall(int, IO_PORT_REVOKE, io_port_revoke, uint16_t, port)
 
 #endif /* SYSCALL_H */

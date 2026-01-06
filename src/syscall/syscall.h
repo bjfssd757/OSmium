@@ -74,15 +74,20 @@
 #define SYSCALL_IO_PORT_GRANT  810
 #define SYSCALL_IO_PORT_REVOKE 811
 
-#define SYSCALL_VFS_REGISTER 820
-#define SYSCALL_VFS_OPEN     821
-#define SYSCALL_VFS_READ     822
-#define SYSCALL_VFS_WRITE    823
-#define SYSCALL_VFS_CLOSE    824
-#define SYSCALL_VFS_STAT     825
-#define SYSCALL_VFS_MKDIR    826
-#define SYSCALL_VFS_RMDIR    827
-#define SYSCALL_VFS_UNLINK   828
+#define SYSCALL_VFS_REGISTER    820
+#define SYSCALL_VFS_OPEN        821
+#define SYSCALL_VFS_READ        822
+#define SYSCALL_VFS_WRITE       823
+#define SYSCALL_VFS_CLOSE       824
+#define SYSCALL_VFS_STAT        825
+#define SYSCALL_VFS_MKDIR       826
+#define SYSCALL_VFS_RMDIR       827
+#define SYSCALL_VFS_UNLINK      828
+#define SYSCALL_VFS_FIND        829
+#define SYSCALL_VFS_SEEK        830
+#define SYSCALL_VFS_FILE_SIZE   831
+
+#define SYSCALL_GET_EVENTS 900
 
 struct syscall_regs
 {

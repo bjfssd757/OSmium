@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <string.h>
 #include "syscall.h" 
 
 typedef struct {
@@ -14,7 +15,7 @@ typedef struct {
 } fs_entry_t;
 
 typedef struct {
-    uint16_t cluster_idx;
+    uint16_t fb;
     uint32_t file_size;
     uint32_t seek_pos;
     int error;
@@ -28,6 +29,13 @@ typedef struct {
 #define SEEK_CUR 1
 #define SEEK_END 2
 
+#define VFS_O_RDONLY    0x0000
+#define VFS_O_WRONLY    0x0001
+#define VFS_O_RDWR      0x0002
+#define VFS_O_CREAT     0x0100
+#define VFS_O_TRUNC     0x0200
+#define VFS_O_APPEND    0x0400
+
 static inline char* fgets(char *s, int size, FILE *stream);
 static inline int printf(const char *format, ...);
 static inline int vfprintf(FILE *stream, const char *format, va_list ap);
@@ -37,14 +45,10 @@ static inline FILE* fopen(const char* filename, const char* mode);
 static inline size_t fread(void* ptr, size_t size, size_t nmemb, FILE* stream);
 static inline size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* stream);
 static inline int fclose(FILE* stream);
-//static inline int fseek(FILE* stream, long offset, int whence);
+static inline int fseek(FILE* stream, long offset, int whence);
 static inline int puts(const char* s);
 
-
-// --- РЕАЛИЗАЦИИ ---
-
 static inline char* fgets(char *s, int size, FILE *stream) {
-    // В нашей ОС пока один источник ввода - клавиатура, поэтому `stream` игнорируется.
     (void)stream;
 
     if (size <= 0) return NULL;
@@ -56,49 +60,40 @@ static inline char* fgets(char *s, int size, FILE *stream) {
         c = (char)syscall_getchar();
 
         if (c == 0) {
-            // Если буфер клавиатуры пуст, можно либо ждать (как здесь),
-            // либо возвращать управление. Для fgets лучше ждать.
             continue;
         }
 
-        if (c == '\b' || c == 127) { // Обработка Backspace
+        if (c == '\b' || c == 127) {
             if (i > 0) {
                 i--;
-                // Можно добавить вывод '\b' на экран, чтобы стереть символ,
-                // но это требует более сложного управления курсором.
-                // Пока просто удаляем из буфера.
             }
         } else if (c == '\n' || c == '\r') {
-            s[i] = '\n'; // Записываем новую строку
+            s[i] = '\n';
             i++;
-            break; // Завершаем ввод
+            break;
         } else {
             s[i] = c;
             i++;
         }
     }
 
-    s[i] = '\0'; // Завершаем строку
+    s[i] = '\0';
     return s;
 }
 
 static inline int printf(const char *format, ...) {
     va_list ap;
     va_start(ap, format);
-    // В нашей ОС нет разницы между stdout и stderr, выводим все на экран
     int result = vfprintf(NULL, format, ap);
     va_end(ap);
     return result;
 }
 
-// Перемещаем реализацию vfprintf из log.c сюда
 static inline int vfprintf(FILE *stream, const char *format, va_list ap) {
-    (void)stream; // Пока что игнорируем, куда выводить. Все идет на экран.
-    
-    // ВАЖНО: Это очень упрощенная реализация для поддержки %s и %lu
-    // Полная реализация vfprintf - это большая и сложная задача.
-    char temp_buffer[1024]; // Буфер для вывода
-    char num_buffer[22];    // Буфер для конвертации чисел
+    (void)stream;
+
+    char temp_buffer[1024];
+    char num_buffer[22];
     int written = 0;
 
     char* p_out = temp_buffer;
@@ -114,7 +109,7 @@ static inline int vfprintf(FILE *stream, const char *format, va_list ap) {
                 }
                 case 'l': {
                     format++;
-                    if (*format == 'u') { // Обрабатываем %lu
+                    if (*format == 'u') { // %lu
                         uint64_t val = va_arg(ap, uint64_t);
                         char* p_num = &num_buffer[20];
                         *p_num = '\0';
@@ -132,9 +127,8 @@ static inline int vfprintf(FILE *stream, const char *format, va_list ap) {
                 }
                  case 'h': {
                     format++;
-                     if (*format == 'h' && *(format+1) == 'u') { // Обрабатываем %hhu
+                     if (*format == 'h' && *(format+1) == 'u') { // %hhu
                         format++;
-                        // В va_arg младшие типы (char, short) продвигаются до int
                         unsigned int val_int = va_arg(ap, unsigned int);
                         uint8_t val = (uint8_t)val_int;
 
@@ -156,7 +150,6 @@ static inline int vfprintf(FILE *stream, const char *format, va_list ap) {
                     *p_out++ = '%';
                     break;
                 default:
-                    // Просто выводим символ как есть, если не знаем формат
                     *p_out++ = '%';
                     *p_out++ = *format;
                     break;
@@ -169,59 +162,66 @@ static inline int vfprintf(FILE *stream, const char *format, va_list ap) {
     *p_out = '\0';
     written = p_out - temp_buffer;
 
-    // Используем puts для вывода на экран
     puts(temp_buffer);
 
     return written;
 }
 
 static inline int fputs(const char *s, FILE *stream) {
-    (void)stream; // Игнорируем поток
-    // Просто выводим строку на экран. puts добавит перенос строки, fputs не должен.
-    // Поэтому используем сырой syscall.
-    // TODO: нужна функция вывода без переноса строки. Пока используем puts.
+    (void)stream;
     puts(s); 
-    return 0; // В случае успеха
+    return 0;
 }
 
 static inline void fflush(FILE* stream) {
-    (void)stream; // Игнорируем, какой поток
+    (void)stream;
     syscall_gfx_update_screen();
 }
 
 static inline int puts(const char* s) {
-    // Выводим строку и перенос строки по разным координатам
-    // Это временное решение. В идеале нужно управлять курсором.
     syscall_gfx_draw_string(10, 10, 16, 0xFFFFFFFF, s);
     // syscall_gfx_draw_string(10, 26, 16, 0xFFFFFFFF, "\n");
     syscall_gfx_update_screen();
     return 0;
 }
 
-
-// ... (остальные функции fopen, fread и т.д. остаются без изменений) ...
-
 static inline FILE* fopen(const char* filename, const char* mode) {
-    // (Упрощенно) Игнорируем `mode` на данный момент.
-    // В будущем можно будет проверять права на чтение/запись.
-    (void)mode;
-    
-    fs_entry_t entry;
-    int file_idx = syscall_fs_find(filename, &entry);
+    if (!filename || !mode) return NULL;
 
-    if (file_idx < 0) {
+    int flags = 0;
+    int plus = (strchr(mode, '+') != NULL);
+
+    switch (mode[0]) {
+        case 'r':
+            flags = plus ? VFS_O_RDWR : VFS_O_RDONLY;
+            break;
+        case 'w':
+            flags = (plus ? VFS_O_RDWR : VFS_O_WRONLY) | VFS_O_CREAT | VFS_O_TRUNC;
+            break;
+        case 'a':
+            flags = (plus ? VFS_O_RDWR : VFS_O_WRONLY) | VFS_O_CREAT | VFS_O_APPEND;
+            break;
+        default:
+            return NULL;
+    }
+
+    int fb = syscall_vfs_open(filename, flags);
+    
+    if (fb < 0) {
         return NULL;
     }
 
     FILE* stream = (FILE*)syscall_malloc(sizeof(FILE));
     if (!stream) {
+        syscall_vfs_close(fb);
         return NULL;
     }
 
-    stream->cluster_idx = entry.cluster;
-    stream->file_size = entry.size;
+    stream->fb = fb;
     stream->seek_pos = 0;
     stream->error = 0;
+
+    stream->file_size = syscall_vfs_file_size(filename);
 
     return stream;
 }
@@ -247,8 +247,7 @@ static inline size_t fread(void* ptr, size_t size, size_t nmemb, FILE* stream) {
         return 0;
     }
 
-    // TODO: Добавить в ядро поддержку seek в syscall_fs_read!
-    size_t bytes_read = syscall_fs_read(stream->cluster_idx, ptr, total_bytes_to_read);
+    size_t bytes_read = syscall_vfs_read(stream->fb, ptr, total_bytes_to_read);
 
     if (bytes_read > 0) {
         stream->seek_pos += bytes_read;
@@ -264,9 +263,8 @@ static inline size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* st
         return 0;
     }
     size_t total_bytes_to_write = size * nmemb;
-    
-    // TODO: Добавить в ядро поддержку seek и расширения файла.
-    size_t bytes_written = syscall_fs_write(stream->cluster_idx, ptr, total_bytes_to_write);
+
+    size_t bytes_written = syscall_vfs_write(stream->fb, ptr, total_bytes_to_write);
 
     if (bytes_written > 0) {
         stream->seek_pos += bytes_written;
@@ -278,6 +276,21 @@ static inline size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* st
     }
 
     return bytes_written / size;
+}
+
+static inline int fseek(FILE* stream, long offset, int whence) {
+    if (!stream) return -1;
+    int res = syscall_vfs_seek(stream->fb, (uint64_t)offset, (uint32_t)whence);
+    if (res == 0) {
+        switch (whence) {
+            case SEEK_SET: stream->seek_pos = offset; break;
+            case SEEK_CUR: stream->seek_pos += offset; break;
+            case SEEK_END: stream->seek_pos = stream->file_size + offset; break;
+        }
+        return 0;
+    }
+    stream->error = 1;
+    return -1;
 }
 
 

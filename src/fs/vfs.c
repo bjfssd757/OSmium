@@ -90,6 +90,76 @@ vfs_mount_t* vfs_resolve_path(const char* path, char* out_rel) {
     return best;
 }
 
+int vfs_seek(int fb, uint64_t offset, uint32_t origin)
+{
+    vfs_file_t *f = vfs_get_file(fb);
+    if (!f || f->is_dir) return -1;
+    ext4_file *ext_file = f->handle;
+    int res = ext4_fseek(ext_file, offset, origin);
+    if (res == 0)
+    {
+        f->offset = ext4_ftell(ext_file);
+        return 0;
+    }
+    return res;
+}
+
+int vfs_find(const char* path)
+{
+    char rel[VFS_PATH_MAX];
+    vfs_mount_t* m = vfs_resolve_path(path, rel);
+    if (!m) return -1;
+    int fb = vfs_alloc_fd();
+    if (fb < 0) return -1;
+
+    vfs_file_t* f = malloc(sizeof(vfs_file_t));
+    if (!f) return -1;
+    memset(f, 0, sizeof(vfs_file_t));
+    f->mount = m;
+    strncpy(f->canonical_path, path, VFS_PATH_MAX-1);
+
+    ext4_dir* d = malloc(sizeof(ext4_dir));
+    if (d) {
+        if (ext4_dir_open(d, path) == 0) {
+            f->is_dir = 1;
+            f->handle = d;
+            fd_table[fb] = f;
+            return fb;
+        }
+        free(d);
+    }
+
+    ext4_file* ef = malloc(sizeof(ext4_file));
+    if (ef) {
+        if (ext4_fopen2(ef, path, 0) == 0) {
+            f->is_dir = 0;
+            f->handle = ef;
+            f->offset = 0;
+            f->size = ext4_fsize(ef);
+            f->flags = 0;
+            fd_table[fb] = f;
+            return fb;
+        }
+        free(ef);
+    }
+
+    free(f);
+    return -1;
+}
+
+size_t vfs_get_file_size(const char *path)
+{
+    ext4_file *ef = malloc(sizeof(ext4_file));
+    if (ef)
+    {
+        if (ext4_fopen2(ef, path, 0))
+        {
+            return ext4_fsize(ef);
+        }
+    }
+    return 0;
+}
+
 int vfs_alloc_fd(void) {
     for (int i = 3; i < VFS_MAX_FD; ++i) {
         if (!fd_table[i]) return i;

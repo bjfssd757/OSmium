@@ -1,7 +1,7 @@
 #ifndef LIBC_STRING_H
 #define LIBC_STRING_H
 
-#include <stddef.h> // для size_t
+#include <stddef.h>
 
 static inline int strcmp(const char *s1, const char *s2) {
     while (*s1 && (*s1 == *s2)) {

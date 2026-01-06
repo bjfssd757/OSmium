@@ -14,6 +14,7 @@
 #include "../fs/fs.h"
 #include "../multitask/ipc.h"
 #include "../fs/vfs.h"
+#include "../multitask/eventbuf.h"
 
 extern uint32_t seconds;
 
@@ -241,6 +242,15 @@ uintptr_t syscall_handler(const struct syscall_regs *regs)
         case SYSCALL_VFS_UNLINK:
             return (uintptr_t)vfs_unlink((const char*)(uintptr_t)regs->rdi);
 
+        case SYSCALL_VFS_FIND:
+            return (uintptr_t)vfs_find((const char*)(uintptr_t)regs->rdi);
+
+        case SYSCALL_VFS_SEEK:
+            return (uintptr_t)vfs_seek((int)regs->rdi, (uint64_t)regs->rsi, (uint32_t)regs->rdx);
+
+        case SYSCALL_VFS_FILE_SIZE:
+            return (uintptr_t)vfs_get_file_size((const char*)(uintptr_t)regs->rdi);
+
         // IPC
 
         case SYSCALL_IPC_SEND:
@@ -251,6 +261,11 @@ uintptr_t syscall_handler(const struct syscall_regs *regs)
 
         case SYSCALL_IPC_CALL:
             return (uintptr_t)sys_ipc_call((int)regs->rdi, (int)regs->rsi, (ipc_msg_t *)(uintptr_t)regs->rdx, (ipc_msg_t *)(uintptr_t)regs->r10);
+
+        // Events
+
+        case SYSCALL_GET_EVENTS:
+            return (uintptr_t)sys_get_events((event_t*)(uintptr_t)regs->rdi, (size_t)regs->rsi);
 
         default:
             return (uintptr_t)-1;

@@ -5,7 +5,7 @@
 
 static inline int *_errno_location(void)
 {
-    return syscall_task_get_errno_loc();
+    return syscall_thread_get_errno_loc();
 }
 
 #define errno (*_errno_location())

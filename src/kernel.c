@@ -226,12 +226,12 @@ void kmain(void)
     gfx_init(fb);
     pci_init();
 
-    gfx_clear(0x000000);
+    // gfx_clear(0x000000);
 
     // gfx_draw_window(50, 50, 400, 200, "System Information", GFX_STATE_NORMAL);
     // gfx_draw_window(200, 250, 500, 300, "Application", GFX_STATE_NORMAL);
 
-    gfx_update_screen();
+    // gfx_update_screen();
 
 #ifdef DEBUG
 

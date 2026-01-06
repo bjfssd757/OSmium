@@ -25,7 +25,13 @@ static inline void free(void* ptr) {
 
 [[noreturn]] static inline void abort(void)
 {
-    syscall_exit(-1);
+    syscall_process_exit(-1);
+    for (;;);
+}
+
+[[noreturn]] static inline void exit(int exit_code)
+{
+    syscall_process_exit(exit_code);
     for (;;);
 }
 

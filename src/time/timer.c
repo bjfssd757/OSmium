@@ -13,11 +13,18 @@
 volatile uint16_t tick_time = 0;
 volatile uint64_t last_ms = 0;
 volatile uint32_t seconds = 0;
+volatile uint32_t current_ms = 0;
 volatile bool screen_refresh_status = true;
+
+uint32_t get_millis(void)
+{
+    return current_ms;
+}
 
 void timer_tick(void)
 {
     tick_time++;
+    current_ms++;
     if (tick_time >= 1000)
     {
         tick_time = 0;

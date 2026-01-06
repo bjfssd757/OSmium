@@ -9,5 +9,6 @@
 extern volatile bool screen_refresh_status;
 
 void init_timer(uint32_t frequency);
+uint32_t get_millis(void);
 
 #endif

@@ -68,6 +68,9 @@ ssize_t vfs_read(int fd, void* buffer, size_t count);
 ssize_t vfs_write(int fd, const void* buffer, size_t count);
 int vfs_close(int fd);
 int vfs_stat(const char* path, vfs_stat_t* stat_buf);
+int vfs_find(const char* path);
+int vfs_seek(int fb, uint64_t offset, uint32_t origin);
+size_t vfs_get_file_size(const char *path);
 
 int vfs_mkdir(const char* path, uint32_t mode);
 int vfs_rmdir(const char* path);

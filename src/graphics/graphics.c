@@ -9,6 +9,7 @@
 #include "../libc/string.h"
 #include "formatting.h"
 #include "colors.h"
+#include "../time/timer.h"
 
 static struct limine_framebuffer *g_fb = NULL;
 static uint8_t *g_backbuffer = NULL;

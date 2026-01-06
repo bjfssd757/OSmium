@@ -5,6 +5,12 @@
 #include <stdbool.h>
 #include "../limine.h"
 
+#define CENTER_X(x, w, obj_w)      ((x) + (((w) - (obj_w)) / 2))
+#define CENTER_Y(y, h, obj_h)      ((y) + (((h) - (obj_h)) / 2))
+
+#define WIDTH_PCT(x, w, pct)   ((x) + ((w) * (pct) / 100))
+#define HEIGHT_PCT(y, h, pct)  ((y) + ((h) * (pct) / 100))
+
 /**
  * @brief Initializes the graphics subsystem.
  * @param fb Pointer to a framebuffer_info_t structure from the loader.

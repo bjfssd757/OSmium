@@ -16,6 +16,14 @@
 #define COLOR_GET_RED(col)   ((uint8_t)(((col) >> 16) & 0xFFu))
 #define COLOR_GET_RESERVED(col) ((uint8_t)(((col) >> 24) & 0xFFu))
 
+#define COLOR_WITH_ALPHA(col, a)        ( \
+    ((col) & 0x00FFFFFFu) | (((uint32_t)(a) & 0xFFu) << 24) \
+)
+#define GLOW(col)       COLOR_WITH_ALPHA(col, 153)
+#define SHADOW(col)     COLOR_WITH_ALPHA(col, 38)
+#define SHADOW2(col)    COLOR_WITH_ALPHA(col, 80)
+#define SHADOW3(col)    COLOR_WITH_ALPHA(col, 120)
+
 #define COLOR_TRANSPARENT  ((uint32_t)0x00000000u)
 #define COLOR_BLACK        ((uint32_t)0xFF000000u) /* #000000 */
 #define COLOR_WHITE        ((uint32_t)0xFFFFFFFFu) /* #FFFFFF */

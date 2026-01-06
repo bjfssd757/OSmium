@@ -1,2 +1,2 @@
 CompileFlags:
-  Add: [-m64, -ffreestanding, -Wall, -Wextra, -Isrc, -nostdlib, -I "libc/include"]
+  Add: [-m64, -ffreestanding, -Wall, -Wextra, -Isrc, -nostdlib, -I "libc/include", -std=gnu23, -xc]
